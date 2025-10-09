@@ -1,23 +1,17 @@
-import { useState, useEffect } from 'react';
-import { LayoutDashboard, MessageSquare, GitBranch, Shield, Sparkles, Menu, X, LogIn, LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, MessageSquare, GitBranch, Shield, Sparkles, Menu, X } from 'lucide-react';
 import { FinancialStatus, Theme } from './types';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/ChatInterface';
 import WhatIfSimulator from './components/WhatIfSimulator';
 import FraudDetector from './components/FraudDetector';
-import LoginPage from './components/LoginPage';
-import ProfileSetup from './components/ProfileSetup';
 import { financialSummary } from './mockData';
 
 type View = 'landing' | 'dashboard' | 'chat' | 'simulator' | 'fraud';
 
-function AppContent() {
-  const { user, profile, loading, signOut } = useAuth();
+function App() {
   const [currentView, setCurrentView] = useState<View>('landing');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   const calculateStatus = (): FinancialStatus => {
     const utilization = financialSummary.budgetUtilization;
@@ -27,12 +21,6 @@ function AppContent() {
   };
 
   const [status] = useState<FinancialStatus>(calculateStatus());
-
-  useEffect(() => {
-    if (user && !profile?.profile_completed && !showProfileSetup && currentView !== 'landing') {
-      setShowProfileSetup(true);
-    }
-  }, [user, profile, currentView, showProfileSetup]);
 
   const themes: Record<FinancialStatus, Theme> = {
     under: {
@@ -75,49 +63,9 @@ function AppContent() {
   ];
 
   const handleViewChange = (view: View) => {
-    if (view !== 'landing' && !user) {
-      setShowLogin(true);
-      return;
-    }
-
-    if (view !== 'landing' && user && !profile?.profile_completed) {
-      setShowProfileSetup(true);
-      return;
-    }
-
     setCurrentView(view);
     setMobileMenuOpen(false);
   };
-
-  const handleLoginSuccess = () => {
-    setShowLogin(false);
-    if (!profile?.profile_completed) {
-      setShowProfileSetup(true);
-    }
-  };
-
-  const handleProfileComplete = () => {
-    setShowProfileSetup(false);
-    setCurrentView('dashboard');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin-slow">
-          <Sparkles className="w-12 h-12 text-cyan-400" />
-        </div>
-      </div>
-    );
-  }
-
-  if (showLogin) {
-    return <LoginPage onSuccess={handleLoginSuccess} />;
-  }
-
-  if (showProfileSetup && user) {
-    return <ProfileSetup onComplete={handleProfileComplete} />;
-  }
 
   const renderContent = () => {
     switch (currentView) {
@@ -241,24 +189,6 @@ function AppContent() {
                 </span>
               </div>
 
-              {user ? (
-                <button
-                  onClick={() => signOut()}
-                  className={`hidden sm:flex items-center space-x-2 px-4 py-2 border ${theme.accent} border-opacity-30 rounded-lg backdrop-blur-xl hover:border-opacity-60 transition-all`}
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">Logout</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowLogin(true)}
-                  className={`hidden sm:flex items-center space-x-2 px-4 py-2 border ${theme.accent} rounded-lg ${theme.glow} shadow-lg backdrop-blur-xl hover:scale-105 transition-all`}
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span className="text-sm">Login</span>
-                </button>
-              )}
-
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className={`lg:hidden p-2 border ${theme.accent} border-opacity-30 rounded-lg backdrop-blur-xl hover:border-opacity-60 transition-all`}
@@ -288,31 +218,6 @@ function AppContent() {
                   </button>
                 );
               })}
-              <div className="pt-2 border-t border-white border-opacity-10">
-                {user ? (
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg border border-white border-opacity-10 hover:border-opacity-30 backdrop-blur-xl transition-all"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    <span>Logout</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setShowLogin(true);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg border ${theme.accent} ${theme.glow} shadow-lg backdrop-blur-xl transition-all`}
-                  >
-                    <LogIn className="w-5 h-5" />
-                    <span>Login</span>
-                  </button>
-                )}
-              </div>
             </div>
           )}
         </div>
@@ -351,14 +256,6 @@ function AppContent() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
   );
 }
 
